@@ -77,6 +77,8 @@
     <Compile Include="Funcitons\BasicFunctions.cs" />
     <Compile Include="Funcitons\GenMetaBalls.cs" />
     <Compile Include="Components\MetaBalls3D.cs" />
+    <Compile Include="Funcitons\MC_CPU.cs" />
+    <Compile Include="Funcitons\Tables.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

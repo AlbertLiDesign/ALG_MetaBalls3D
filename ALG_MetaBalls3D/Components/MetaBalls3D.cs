@@ -88,7 +88,6 @@ namespace ALG.MetaBalls3D
 
             sw.Restart();
             Mesh mesh = BasicFunctions.ExtractMesh(resultPts);
-            //mesh.Faces.CullDegenerateFaces();
             mesh.FaceNormals.ComputeFaceNormals();
             mesh.Normals.ComputeNormals();
 

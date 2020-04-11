@@ -24,81 +24,10 @@ __device__ float computeValue(float3* samplePts, float3 testP, uint sampleLength
         Dy = testP.y - samplePts[j].y;
         Dz = testP.z - samplePts[j].z;
 
-        result += 1 / (Dx * Dx + Dy * Dy + Dz * Dz);
+        //result += 1.0f / (abs(Dx)+abs(Dy)+abs(Dz));
+        result += 1.0f / (Dx * Dx + Dy * Dy + Dz * Dz);
     }
     return result;
-}
-__global__ void kernelCompute(float3* samplePts, float3 testP[8], uint sampleLength, float result[8])
-{
-    float Dx, Dy, Dz;
-
-    for (int j = 0; j < sampleLength; j++)
-    {
-        Dx = testP[0].x - samplePts[j].x;
-        Dy = testP[0].y - samplePts[j].y;
-        Dz = testP[0].z - samplePts[j].z;
-
-        result[0] += 1 / (Dx * Dx + Dy * Dy + Dz * Dz);
-    }
-    for (int j = 0; j < sampleLength; j++)
-    {
-        Dx = testP[1].x - samplePts[j].x;
-        Dy = testP[1].y - samplePts[j].y;
-        Dz = testP[1].z - samplePts[j].z;
-
-        result[1] += 1 / (Dx * Dx + Dy * Dy + Dz * Dz);
-    }
-    for (int j = 0; j < sampleLength; j++)
-    {
-        Dx = testP[2].x - samplePts[j].x;
-        Dy = testP[2].y - samplePts[j].y;
-        Dz = testP[2].z - samplePts[j].z;
-
-        result[2] += 1 / (Dx * Dx + Dy * Dy + Dz * Dz);
-    }
-
-    for (int j = 0; j < sampleLength; j++)
-    {
-        Dx = testP[3].x - samplePts[j].x;
-        Dy = testP[3].y - samplePts[j].y;
-        Dz = testP[3].z - samplePts[j].z;
-
-        result[3] += 1 / (Dx * Dx + Dy * Dy + Dz * Dz);
-    }
-
-    for (int j = 0; j < sampleLength; j++)
-    {
-        Dx = testP[4].x - samplePts[j].x;
-        Dy = testP[4].y - samplePts[j].y;
-        Dz = testP[4].z - samplePts[j].z;
-
-        result[4] += 1 / (Dx * Dx + Dy * Dy + Dz * Dz);
-    }
-
-    for (int j = 0; j < sampleLength; j++)
-    {
-        Dx = testP[5].x - samplePts[j].x;
-        Dy = testP[5].y - samplePts[j].y;
-        Dz = testP[5].z - samplePts[j].z;
-
-        result[5] += 1 / (Dx * Dx + Dy * Dy + Dz * Dz);
-    }
-    for (int j = 0; j < sampleLength; j++)
-    {
-        Dx = testP[6].x - samplePts[j].x;
-        Dy = testP[6].y - samplePts[j].y;
-        Dz = testP[6].z - samplePts[j].z;
-
-        result[6] += 1 / (Dx * Dx + Dy * Dy + Dz * Dz);
-    }
-    for (int j = 0; j < sampleLength; j++)
-    {
-        Dx = testP[7].x - samplePts[j].x;
-        Dy = testP[7].y - samplePts[j].y;
-        Dz = testP[7].z - samplePts[j].z;
-
-        result[7] += 1 / (Dx * Dx + Dy * Dy + Dz * Dz);
-    }
 }
 // compute 3d index in the grid from 1d index
 __device__ uint3 calcGridPos(uint i, uint3 gridSize)
@@ -134,13 +63,13 @@ __global__ void classifyVoxel(uint* voxelVerts, uint* voxelOccupied, uint3 gridS
     p.z = basePoint.z + gridPos.z * voxelSize.z;
 
     float field0 = computeValue(samplePts, p, sampleLength);
-    float field1 = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0 + p.y, 0 + p.z), sampleLength);
-    float field2 = computeValue(samplePts, make_float3(voxelSize.x + p.x, voxelSize.y + p.y, 0 + p.z), sampleLength);
-    float field3 = computeValue(samplePts, make_float3(0 + p.x, voxelSize.y + p.y, 0 + p.z), sampleLength);
-    float field4 = computeValue(samplePts, make_float3(0 + p.x, 0 + p.y, voxelSize.z + p.z), sampleLength);
-    float field5 = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0 + p.y, voxelSize.z + p.z), sampleLength);
+    float field1 = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0.0f + p.y, 0.0f + p.z), sampleLength);
+    float field2 = computeValue(samplePts, make_float3(voxelSize.x + p.x, voxelSize.y + p.y, 0.0f + p.z), sampleLength);
+    float field3 = computeValue(samplePts, make_float3(0.0f + p.x, voxelSize.y + p.y, 0.0f + p.z), sampleLength);
+    float field4 = computeValue(samplePts, make_float3(0.0f + p.x, 0.0f + p.y, voxelSize.z + p.z), sampleLength);
+    float field5 = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0.0f + p.y, voxelSize.z + p.z), sampleLength);
     float field6 = computeValue(samplePts, make_float3(voxelSize.x + p.x, voxelSize.y + p.y, voxelSize.z + p.z), sampleLength);
-    float field7 = computeValue(samplePts, make_float3(0 + p.x, voxelSize.y + p.y, voxelSize.z + p.z), sampleLength);
+    float field7 = computeValue(samplePts, make_float3(0.0f + p.x, voxelSize.y + p.y, voxelSize.z + p.z), sampleLength);
 
     // calculate flag indicating if each vertex is inside or outside isosurface
     uint cubeindex;
@@ -195,13 +124,13 @@ __global__ void extractIsosurface(float3* result, uint* compactedVoxelArray, uin
 
     float field[8];
     field[0] = computeValue(samplePts, p, sampleLength);
-    field[1] = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0 + p.y, 0 + p.z), sampleLength);
-    field[2] = computeValue(samplePts, make_float3(voxelSize.x + p.x, voxelSize.y + p.y, 0 + p.z), sampleLength);
-    field[3] = computeValue(samplePts, make_float3(0 + p.x, voxelSize.y + p.y, 0 + p.z), sampleLength);
-    field[4] = computeValue(samplePts, make_float3(0 + p.x, 0 + p.y, voxelSize.z + p.z), sampleLength);
-    field[5] = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0 + p.y, voxelSize.z + p.z), sampleLength);
+    field[1] = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0.0f + p.y, 0.0f + p.z), sampleLength);
+    field[2] = computeValue(samplePts, make_float3(voxelSize.x + p.x, voxelSize.y + p.y, 0.0f + p.z), sampleLength);
+    field[3] = computeValue(samplePts, make_float3(0.0f + p.x, voxelSize.y + p.y, 0.0f + p.z), sampleLength);
+    field[4] = computeValue(samplePts, make_float3(0.0f + p.x, 0.0f + p.y, voxelSize.z + p.z), sampleLength);
+    field[5] = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0.0f + p.y, voxelSize.z + p.z), sampleLength);
     field[6] = computeValue(samplePts, make_float3(voxelSize.x + p.x, voxelSize.y + p.y, voxelSize.z + p.z), sampleLength);
-    field[7] = computeValue(samplePts, make_float3(0 + p.x, voxelSize.y + p.y, voxelSize.z + p.z), sampleLength);
+    field[7] = computeValue(samplePts, make_float3(0.0f + p.x, voxelSize.y + p.y, voxelSize.z + p.z), sampleLength);
 
     // calculate flag indicating if each vertex is inside or outside isosurface
     uint cubeindex;
