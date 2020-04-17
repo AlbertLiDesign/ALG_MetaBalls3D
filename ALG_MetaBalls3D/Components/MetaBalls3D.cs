@@ -20,8 +20,9 @@ namespace ALG.MetaBalls3D
         {
             pManager.AddPointParameter("Point", "P", "Sample points.", GH_ParamAccess.list);
             pManager.AddNumberParameter("Boundary", "B", "The scale of the boundingbox's boundary.", GH_ParamAccess.item, 1.1);
-            pManager.AddNumberParameter("VoxelSize", "S", "Voxel Size", GH_ParamAccess.item, 1.0);
+            pManager.AddNumberParameter("VoxelSize", "S", "Voxel Size", GH_ParamAccess.item);
             pManager.AddNumberParameter("Isovalue", "Iso", "Isovalue.", GH_ParamAccess.item);
+            pManager.AddNumberParameter("Fusion", "F", "Fusion.", GH_ParamAccess.item,1.0);
         }
 
         protected override void RegisterOutputParams(GH_Component.GH_OutputParamManager pManager)
@@ -37,6 +38,7 @@ namespace ALG.MetaBalls3D
             double scale = 1.0;
             double boundaryRatio = 2.0;
             double isovalue = 5.0;
+            double fusion = 0.0;
             List<double> time = new List<double>();
             Stopwatch sw = new Stopwatch();
 
@@ -44,6 +46,7 @@ namespace ALG.MetaBalls3D
             DA.GetData("Boundary", ref boundaryRatio);
             DA.GetData("VoxelSize", ref scale);
             DA.GetData("Isovalue", ref isovalue);
+            DA.GetData("Fusion", ref fusion);
             #endregion
 
             #region initialization
@@ -68,7 +71,12 @@ namespace ALG.MetaBalls3D
 
             Point3d voxelS = new Point3d(scale, scale, scale);
 
-            var isoSurface = new MetaBalls3D(baseP, xCount, yCount, zCount, voxelS, (float)scale, (float)isovalue, samplePts);
+            if (fusion <0)
+            {
+                AddRuntimeMessage(GH_RuntimeMessageLevel.Error, "The fusion value is too small.");
+                return;
+            }
+            var isoSurface = new MetaBalls3D(baseP, xCount, yCount, zCount, voxelS, (float)scale, (float)isovalue, (float)fusion+1.0f, samplePts);
             #endregion
 
             sw.Start();

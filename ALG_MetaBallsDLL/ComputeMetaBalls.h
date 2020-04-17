@@ -11,7 +11,7 @@ using namespace std;
 
 extern "C" void launch_classifyVoxel(dim3 grid, dim3 threads, uint * voxelVerts, uint * voxelOccupied, uint3 gridSize,
     uint numVoxels, float3 basePoint, float3 voxelSize,
-    float isoValue, float3 * samplePts, uint sampleLength);
+    float isoValue, float3 * samplePts, uint sampleLength, float fusion);
 
 extern "C" void launch_compactVoxels(dim3 grid, dim3 threads, uint * compactedVoxelArray, uint * voxelOccupied,
     uint * voxelOccupiedScan, uint numVoxels);
@@ -19,7 +19,7 @@ extern "C" void launch_compactVoxels(dim3 grid, dim3 threads, uint * compactedVo
 extern "C" void launch_extractIsosurface(dim3 grid, dim3 threads,
     float3 * result, uint * compactedVoxelArray, uint * numVertsScanned,
     uint3 gridSize, float3 basePoint, float3 voxelSize, float isoValue, float scale,
-    float3 * samplePts, uint sampleLength);
+    float3 * samplePts, uint sampleLength, float fusion);
 
 extern "C" void exclusiveSumScan(uint * output, uint * input, uint numElements);
 
@@ -55,9 +55,8 @@ uint num_resultVertices = 0;
 uint sampleLength = 0;
 
 float isoValue = 0.2f;
-float dIsoValue = 0.005f;
 float scale = 0.0f;
-
+float fusion = 1.0;
 
 // device data
 float3* samplePts;

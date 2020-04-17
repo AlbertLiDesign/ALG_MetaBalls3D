@@ -22,11 +22,12 @@ namespace ALG.MetaBalls3D
         public int zCount;
         public float scale;
         public float isoValue;
+        public float fusion;
         public List<Point3d> samplePoints;
 
         public MetaBalls3D() { }
         public MetaBalls3D(Point3d basePoint, int xCount, int yCount, int zCount, Point3d voxelSize,
-            float scale, float isoValue, List<Point3d> samplePoints)
+            float scale, float isoValue,float fusion, List<Point3d> samplePoints)
         {
             this.basePoint = basePoint;
             this.xCount = xCount;
@@ -35,12 +36,13 @@ namespace ALG.MetaBalls3D
             this.voxelSize = voxelSize;
             this.scale = scale;
             this.isoValue = isoValue;
+            this.fusion = fusion;
             this.samplePoints = samplePoints;
         }
 
         [DllImport("ALG_MetaBallsDLL.dll", EntryPoint = "CalcMetaBalls")]
         public static extern bool CalcMetaBalls(cfloat3 bP, cfloat3 vS, int xCount, int yCount, int zCount,
-            float s, float iso, cfloat3[] samplePoints, int sampleCount, ref uint resultLength);
+            float s, float iso, float fusion, cfloat3[] samplePoints, int sampleCount, ref uint resultLength);
         [DllImport("ALG_MetaBallsDLL.dll", EntryPoint = "GetResult")]
         public static extern void GetResult(IntPtr result);
         public bool GenMetaBalls(ref List<Point3d> vertices, ref int num_activeVoxels)
@@ -55,7 +57,7 @@ namespace ALG.MetaBalls3D
             }
 
             uint resultLength = 0;
-            bool successful = CalcMetaBalls(bP, vS, xCount, yCount, zCount, scale, isoValue, smaplePts, sampleCount, ref resultLength);
+            bool successful = CalcMetaBalls(bP, vS, xCount, yCount, zCount, scale, isoValue, fusion, smaplePts, sampleCount, ref resultLength);
 
             if (successful == false)
             {

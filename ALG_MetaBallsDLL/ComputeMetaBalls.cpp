@@ -16,12 +16,12 @@
 #include "ComputeMetaBalls.h"
 
 extern "C" __declspec(dllexport)  bool CalcMetaBalls(cfloat3 bP, cfloat3 vS,
-    int xCount, int yCount, int zCount, float s, float iso, cfloat3 * samplePoints,
+    int xCount, int yCount, int zCount, float s, float iso,float fu, cfloat3 * samplePoints,
     int sampleCount, size_t & resultLength);
 extern "C" __declspec(dllexport)  void GetResult(cfloat3 * result);
 
 bool CalcMetaBalls(cfloat3 bP, cfloat3 vS, int xCount, int yCount, int zCount,
-    float s, float iso, cfloat3* samplePoints, int sampleCount, size_t& resultLength)
+    float s, float iso, float fu, cfloat3* samplePoints, int sampleCount, size_t& resultLength)
 {
     bool successful = true;
 
@@ -30,6 +30,7 @@ bool CalcMetaBalls(cfloat3 bP, cfloat3 vS, int xCount, int yCount, int zCount,
     voxelSize = Convert(vS);
     gridSize = make_uint3(xCount, yCount, zCount);
     numVoxels = xCount * yCount * zCount;
+    fusion = fu;
     scale = s;
     isoValue = iso;
 
@@ -54,7 +55,7 @@ bool CalcMetaBalls(cfloat3 bP, cfloat3 vS, int xCount, int yCount, int zCount,
     // calculate number of vertices need per voxel
     launch_classifyVoxel(grid, threads,
         d_voxelVerts, d_voxelOccupied, gridSize,
-        numVoxels, basePoint, voxelSize, isoValue, d_samplePts, sampleLength);
+        numVoxels, basePoint, voxelSize, isoValue, d_samplePts, sampleLength, fusion);
 
     /*
     Scan occupied voxels
@@ -125,7 +126,7 @@ bool CalcMetaBalls(cfloat3 bP, cfloat3 vS, int xCount, int yCount, int zCount,
 
     launch_extractIsosurface(grid2, threads, d_result, d_compVoxelArray, d_voxelVertsScan,
         gridSize, basePoint, voxelSize,
-        isoValue, scale, d_samplePts, sampleLength);
+        isoValue, scale, d_samplePts, sampleLength,fusion);
 
     resultPts = new float3[num_resultVertices];
     checkCudaErrors(cudaMemcpy(resultPts,

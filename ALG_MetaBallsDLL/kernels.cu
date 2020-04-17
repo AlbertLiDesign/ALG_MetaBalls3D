@@ -13,7 +13,23 @@
 #include "tables.h"
 
 // compute values of each corner point
-__device__ float computeValue(float3* samplePts, float3 testP, uint sampleLength)
+//__device__ float computeValue(float3* samplePts, float3 testP, uint sampleLength)
+//{
+//    float result = 0.0f;
+//    float Dx, Dy, Dz;
+//
+//    for (int j = 0; j < sampleLength; j++)
+//    {
+//        Dx = testP.x - samplePts[j].x;
+//        Dy = testP.y - samplePts[j].y;
+//        Dz = testP.z - samplePts[j].z;
+//
+//        //result += 1.0f / (abs(Dx)+abs(Dy)+abs(Dz));
+//        result += 1.0f / (Dx * Dx + Dy * Dy + Dz * Dz);
+//    }
+//    return result;
+//}
+__device__ float computeValue(float3* samplePts, float3 testP, uint sampleLength, float radius)
 {
     float result = 0.0f;
     float Dx, Dy, Dz;
@@ -24,8 +40,12 @@ __device__ float computeValue(float3* samplePts, float3 testP, uint sampleLength
         Dy = testP.y - samplePts[j].y;
         Dz = testP.z - samplePts[j].z;
 
-        //result += 1.0f / (abs(Dx)+abs(Dy)+abs(Dz));
-        result += 1.0f / (Dx * Dx + Dy * Dy + Dz * Dz);
+        float di = Dx * Dx + Dy * Dy + Dz * Dz;
+        if (di < radius)
+        {
+            float a = di / radius;
+            result += (1.0 - a * a) * (1.0 - a * a);
+        }
     }
     return result;
 }
@@ -50,7 +70,7 @@ __device__ float calcOffsetValue(float Value1, float Value2, float ValueDesired)
 // classify voxel
 __global__ void classifyVoxel(uint* voxelVerts, uint* voxelOccupied, uint3 gridSize,
     uint numVoxels, float3 basePoint, float3 voxelSize,
-    float isoValue, float3* samplePts, uint sampleLength)
+    float isoValue, float3* samplePts, uint sampleLength,float fusion)
 {
     uint blockId = blockIdx.y * gridDim.x + blockIdx.x;
     uint i = blockId * blockDim.x + threadIdx.x;
@@ -62,14 +82,17 @@ __global__ void classifyVoxel(uint* voxelVerts, uint* voxelOccupied, uint3 gridS
     p.y = basePoint.y + gridPos.y * voxelSize.y;
     p.z = basePoint.z + gridPos.z * voxelSize.z;
 
-    float field0 = computeValue(samplePts, p, sampleLength);
-    float field1 = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0.0f + p.y, 0.0f + p.z), sampleLength);
-    float field2 = computeValue(samplePts, make_float3(voxelSize.x + p.x, voxelSize.y + p.y, 0.0f + p.z), sampleLength);
-    float field3 = computeValue(samplePts, make_float3(0.0f + p.x, voxelSize.y + p.y, 0.0f + p.z), sampleLength);
-    float field4 = computeValue(samplePts, make_float3(0.0f + p.x, 0.0f + p.y, voxelSize.z + p.z), sampleLength);
-    float field5 = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0.0f + p.y, voxelSize.z + p.z), sampleLength);
-    float field6 = computeValue(samplePts, make_float3(voxelSize.x + p.x, voxelSize.y + p.y, voxelSize.z + p.z), sampleLength);
-    float field7 = computeValue(samplePts, make_float3(0.0f + p.x, voxelSize.y + p.y, voxelSize.z + p.z), sampleLength);
+     float distance = voxelSize.x * voxelSize.x + voxelSize.y * voxelSize.y + voxelSize.z * voxelSize.z;
+     float radius = distance * fusion;
+
+    float field0 = computeValue(samplePts, p, sampleLength, radius);
+    float field1 = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0.0f + p.y, 0.0f + p.z), sampleLength, radius);
+    float field2 = computeValue(samplePts, make_float3(voxelSize.x + p.x, voxelSize.y + p.y, 0.0f + p.z), sampleLength, radius);
+    float field3 = computeValue(samplePts, make_float3(0.0f + p.x, voxelSize.y + p.y, 0.0f + p.z), sampleLength, radius);
+    float field4 = computeValue(samplePts, make_float3(0.0f + p.x, 0.0f + p.y, voxelSize.z + p.z), sampleLength, radius);
+    float field5 = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0.0f + p.y, voxelSize.z + p.z), sampleLength, radius);
+    float field6 = computeValue(samplePts, make_float3(voxelSize.x + p.x, voxelSize.y + p.y, voxelSize.z + p.z), sampleLength, radius);
+    float field7 = computeValue(samplePts, make_float3(0.0f + p.x, voxelSize.y + p.y, voxelSize.z + p.z), sampleLength, radius);
 
     // calculate flag indicating if each vertex is inside or outside isosurface
     uint cubeindex;
@@ -109,7 +132,7 @@ __global__ void compactVoxels(uint* compactedVoxelArray, uint* voxelOccupied, ui
 
 __global__ void extractIsosurface(float3* result, uint* compactedVoxelArray, uint* numVertsScanned,
     uint3 gridSize, float3 basePoint, float3 voxelSize, float isoValue, float scale,
-    float3* samplePts, uint sampleLength)
+    float3* samplePts, uint sampleLength, float fusion)
 {
     uint blockId = __mul24(blockIdx.y, gridDim.x) + blockIdx.x;
     uint i = __mul24(blockId, blockDim.x) + threadIdx.x;
@@ -122,15 +145,18 @@ __global__ void extractIsosurface(float3* result, uint* compactedVoxelArray, uin
     p.y = basePoint.y + gridPos.y * voxelSize.y;
     p.z = basePoint.z + gridPos.z * voxelSize.z;
 
+    float distance = voxelSize.x * voxelSize.x + voxelSize.y * voxelSize.y + voxelSize.z * voxelSize.z;
+    float radius = distance * fusion;
+
     float field[8];
-    field[0] = computeValue(samplePts, p, sampleLength);
-    field[1] = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0.0f + p.y, 0.0f + p.z), sampleLength);
-    field[2] = computeValue(samplePts, make_float3(voxelSize.x + p.x, voxelSize.y + p.y, 0.0f + p.z), sampleLength);
-    field[3] = computeValue(samplePts, make_float3(0.0f + p.x, voxelSize.y + p.y, 0.0f + p.z), sampleLength);
-    field[4] = computeValue(samplePts, make_float3(0.0f + p.x, 0.0f + p.y, voxelSize.z + p.z), sampleLength);
-    field[5] = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0.0f + p.y, voxelSize.z + p.z), sampleLength);
-    field[6] = computeValue(samplePts, make_float3(voxelSize.x + p.x, voxelSize.y + p.y, voxelSize.z + p.z), sampleLength);
-    field[7] = computeValue(samplePts, make_float3(0.0f + p.x, voxelSize.y + p.y, voxelSize.z + p.z), sampleLength);
+    field[0] = computeValue(samplePts, p, sampleLength, radius);
+    field[1] = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0.0f + p.y, 0.0f + p.z), sampleLength, radius);
+    field[2] = computeValue(samplePts, make_float3(voxelSize.x + p.x, voxelSize.y + p.y, 0.0f + p.z), sampleLength, radius);
+    field[3] = computeValue(samplePts, make_float3(0.0f + p.x, voxelSize.y + p.y, 0.0f + p.z), sampleLength, radius);
+    field[4] = computeValue(samplePts, make_float3(0.0f + p.x, 0.0f + p.y, voxelSize.z + p.z), sampleLength, radius);
+    field[5] = computeValue(samplePts, make_float3(voxelSize.x + p.x, 0.0f + p.y, voxelSize.z + p.z), sampleLength, radius);
+    field[6] = computeValue(samplePts, make_float3(voxelSize.x + p.x, voxelSize.y + p.y, voxelSize.z + p.z), sampleLength, radius);
+    field[7] = computeValue(samplePts, make_float3(0.0f + p.x, voxelSize.y + p.y, voxelSize.z + p.z), sampleLength, radius);
 
     // calculate flag indicating if each vertex is inside or outside isosurface
     uint cubeindex;
@@ -227,12 +253,12 @@ __global__ void extractIsosurface(float3* result, uint* compactedVoxelArray, uin
 
 extern "C" void launch_classifyVoxel(dim3 grid, dim3 threads, uint * voxelVerts, uint * voxelOccupied, uint3 gridSize,
     uint numVoxels, float3 basePoint, float3 voxelSize,
-    float isoValue, float3 * samplePts, uint sampleLength)
+    float isoValue, float3 * samplePts, uint sampleLength,float fusion)
 {
     // calculate number of vertices need per voxel
     classifyVoxel << <grid, threads >> > (voxelVerts, voxelOccupied, gridSize,
         numVoxels, basePoint, voxelSize,
-        isoValue, samplePts, sampleLength);
+        isoValue, samplePts, sampleLength, fusion);
     getLastCudaError("classifyVoxel failed");
 }
 
@@ -253,11 +279,11 @@ extern "C" void exclusiveSumScan(uint * output, uint * input, uint numElements)
 extern "C" void launch_extractIsosurface(dim3 grid, dim3 threads,
     float3 * result, uint * compactedVoxelArray, uint * numVertsScanned,
     uint3 gridSize, float3 basePoint, float3 voxelSize, float isoValue, float scale,
-    float3 * samplePts, uint sampleLength)
+    float3 * samplePts, uint sampleLength, float fusion)
 {
     extractIsosurface << <grid, threads >> > (result, compactedVoxelArray, numVertsScanned,
         gridSize, basePoint, voxelSize, isoValue, scale,
-        samplePts, sampleLength);
+        samplePts, sampleLength, fusion);
     getLastCudaError("extract Isosurface failed");
 }
 #pragma endregion
