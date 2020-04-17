@@ -4,10 +4,9 @@ ALG_Metaballs is an plug-in to generate 3d metaballs for Grasshopper using [Marc
 
 At present, its computational performance can still be optimized. I will continue to improve it in my future work.
 
-![](https://albertlidesign.github.io/post-images/1586082938627.png)
+![](file://E:/MyResearch/Blog/post-images/1587119438162.gif =300x)
 
 ## Algorithm
-
 1. Compute bounding box from input points. 
 
 2. Generation of a voxel-based grid inside the box. 
@@ -22,8 +21,6 @@ At present, its computational performance can still be optimized. I will continu
 
 7. Generate a mesh model from result points.
 
-   
-
 ## How metaballs work [10]
 
 Each metaball has a "sphere of influence". When you [merge](https://www.sidefx.com/docs/houdini/nodes/sop/merge.html) two metaballs and they extend into each other’s sphere of influence, they react in a way similar to drops of water: the surface tension works to form a smooth bridge between them. This is useful for making organic "blobby" shapes which meld into each other.
@@ -36,31 +33,15 @@ When two or more metaball force fields are combined, as in the illustration belo
 
 ![](https://www.sidefx.com/docs/houdini/nodes/images/MetaballFieldsa.jpg)
 
-
-
-## Performance
-
-![](https://albertlidesign.github.io/post-images/1586082652606.png)
-
 ## Reference
 
-[1] Dyken, C., Ziegler, G., Theobalt, C., & Seidel, H. P. (2008, December). High‐speed marching cubes using histopyramids. In Computer Graphics Forum (Vol. 27, No. 8, pp. 2028-2039). Oxford, UK: Blackwell Publishing Ltd.
+[1] Lorensen W E, Cline H E. Marching cubes: A high resolution 3D surface construction algorithm. ACM SIGGRAPH Computer Graphics. 1987;21(4)
 
-[2] Congote, J., Moreno, A., Barandiaran, I., Barandiaran, J., Posada, J., & Ruiz, O. (2010). Marching cubes in an unsigned distance field for surface reconstruction from unorganized point sets. In *Proceedings of the International Conference on Computer Graphics Theory and Applications, vol. 1, pp. 143,147, 2010*.
+[2] The algorithm and lookup tables by Paul Bourke httppaulbourke.netgeometrypolygonise：http://paulbourke.net/geometry/polygonise/
 
-[3] Lorensen W E, Cline H E. Marching cubes: A high resolution 3D surface construction algorithm. ACM SIGGRAPH Computer Graphics. 1987;21(4)
+[3] Triquet, F., Meseure, P., & Chaillou, C. (2001). Fast polygonization of implicit surfaces.
 
-[4] C. Dyken, G. Ziegler, C. Theobalt, and H.-P. Seidel. High-speed Marching Cubes using HistoPyramids. Computer Graphics Forum, 27(8):2028–2039, Dec. 2008.
+[4] McPheeters, G. W. C., & Wyvill, B. (1986). Data structure for soft objects. The Visual Computer, 2(4), 227-234.
 
-[5] The algorithm and lookup tables by Paul Bourke httppaulbourke.netgeometrypolygonise：http://paulbourke.net/geometry/polygonise/
-
-[6] Marching Cubes implementation using OpenCL and OpenGL：https://www.eriksmistad.no/marching-cubes-implementation-using-opencl-and-opengl/
-
-[7] A sample extracts a geometric isosurface from a volume dataset using the marching cubes algorithm.: https://github.com/tpn/cuda-samples/tree/master/v10.2/2_Graphics/marchingCubes
-
-[8] The introduction of marching cubes: http://www.cs.carleton.edu/cs_comps/0405/shape/marching_cubes.html
-
-[9] The introduction of marching cubes: https://medium.com/zeg-ai/voxel-to-mesh-conversion-marching-cube-algorithm-43dbb0801359
-
-[10] Metaball geometry node. (n.d.). Retrieved from https://www.sidefx.com/docs/houdini/nodes/sop/metaball.html
+[5] https://www.sidefx.com/docs/houdini/nodes/sop/metaball.html
 
