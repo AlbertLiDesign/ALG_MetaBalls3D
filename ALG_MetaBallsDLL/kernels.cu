@@ -13,6 +13,7 @@
 #include "tables.h"
 
 // compute values of each corner point
+// 
 //__device__ float computeValue(float3* samplePts, float3 testP, uint sampleLength)
 //{
 //    float result = 0.0f;
@@ -29,6 +30,27 @@
 //    }
 //    return result;
 //}
+//__device__ float computeValue(float3* samplePts, float3 testP, uint sampleLength, float radius)
+//{
+//    float result = 0.0f;
+//    float Dx, Dy, Dz;
+//
+//    for (int j = 0; j < sampleLength; j++)
+//    {
+//        Dx = testP.x - samplePts[j].x;
+//        Dy = testP.y - samplePts[j].y;
+//        Dz = testP.z - samplePts[j].z;
+//
+//        float di = Dx * Dx + Dy * Dy + Dz * Dz;
+//        if (di < radius)
+//        {
+//            float a = di / radius;
+//            result += (1.0 - a * a) * (1.0 - a * a);
+//        }
+//    }
+//    return result;
+//}
+// Field Function for Soft Object
 __device__ float computeValue(float3* samplePts, float3 testP, uint sampleLength, float radius)
 {
     float result = 0.0f;
@@ -41,10 +63,10 @@ __device__ float computeValue(float3* samplePts, float3 testP, uint sampleLength
         Dz = testP.z - samplePts[j].z;
 
         float di = Dx * Dx + Dy * Dy + Dz * Dz;
-        if (di < radius)
+        if (di <= radius)
         {
             float a = di / radius;
-            result += (1.0 - a * a) * (1.0 - a * a);
+            result += (1.0f - (a * a * a * a * a * a * 4.0f / 9.0f) + (a * a * a * a * 17.0f / 9.0f) - (a * a * 22.0f / 9.0f));
         }
     }
     return result;
