@@ -149,65 +149,6 @@ void GetResult(cfloat3* results)
     delete[] resultPts;
 }
 
-// Load arguments
-float3* loadFile(string filename)
-{
-    ifstream inFile;
-
-    inFile.open(filename);
-    if (inFile) {
-        cout << "pts.txt open scessful" << endl;
-
-        string s;
-        getline(inFile, s);
-        sampleLength = stoi(s);
-
-        float bf1, bf2, bf3;
-        inFile >> bf1 >> bf2 >> bf3;
-        basePoint = make_float3(bf1, bf2, bf3);
-
-        inFile >> scale >> isoValue;
-        voxelSize = make_float3(scale, scale, scale);
-
-        int xCount, yCount, zCount;
-        inFile >> xCount >> yCount >> zCount;
-        gridSize = make_uint3(xCount, yCount, zCount);
-        numVoxels = xCount * yCount * zCount;
-
-        samplePts = new float3[sampleLength * sizeof(float3)];
-        int i = 0;
-        float f1, f2, f3;
-        while (inFile >> f1 >> f2 >> f3)
-        {
-            samplePts[i] = make_float3(f1, f2, f3);
-            i++;
-        }
-
-        inFile.close();
-        return samplePts;
-    }
-    else
-    {
-        cout << "endless.txt doesn't exist" << endl;
-        float3* samplePts = new float3[sampleLength];
-        return samplePts;
-    }
-}
-void writeFile(string filename)
-{
-    ofstream outFile;
-    outFile.open(filename);
-    if (outFile.is_open())
-    {
-        for (size_t i = 0; i < num_resultVertices; i++)
-        {
-            outFile << resultPts[i].x << '\t' << resultPts[i].y << '\t' << resultPts[i].z << endl;
-        }
-
-        outFile.close();
-    }
-}
-
 
 void initMetaBalls()
 {
