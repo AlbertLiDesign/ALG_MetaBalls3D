@@ -81,7 +81,7 @@ namespace ALG.MetaBalls3D
 
             sw.Start();
             int num_activeVoxels = 0, num_Voxels = xCount * yCount * zCount;
-            List<Point3d> resultPts = new List<Point3d>();
+            List<Point3f> resultPts = new List<Point3f>();
             bool successful = isoSurface.GenMetaBalls(ref resultPts, ref num_activeVoxels);
 
             if (successful == false)

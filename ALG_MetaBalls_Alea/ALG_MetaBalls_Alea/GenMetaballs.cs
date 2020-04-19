@@ -21,6 +21,7 @@ namespace ALG.MetaBalls3D
 
         private static readonly GlobalVariableSymbol<float> constIsovalue = Gpu.DefineConstantVariableSymbol<float>();
         private static readonly GlobalVariableSymbol<float> constScale = Gpu.DefineConstantVariableSymbol<float>();
+        private static readonly GlobalVariableSymbol<float> constFusion = Gpu.DefineConstantVariableSymbol<float>();
         private static readonly GlobalVariableSymbol<float3> constBasePoint = Gpu.DefineConstantVariableSymbol<float3>();
         private static readonly GlobalVariableSymbol<float3> constVoxelSize = Gpu.DefineConstantVariableSymbol<float3>();
         private static readonly GlobalVariableSymbol<int3> constGridSize = Gpu.DefineConstantVariableSymbol<int3>();
@@ -138,6 +139,15 @@ namespace ALG.MetaBalls3D
             }
             return pts;
         }
+        public List<Point3f> ConvertFloat3ToPoint3f(float3[] array)
+        {
+            Point3f[] pts = new Point3f[array.Length];
+            Parallel.For (0,array.Length,i=>
+            {
+                pts[i] = new Point3f(array[i].x, array[i].y, array[i].z);
+            });
+            return pts.ToList();
+        }
         public List<Point3d> ConvertFloat4ToPoint3d(float4[] array)
         {
             List<Point3d> pts = new List<Point3d>();
@@ -168,7 +178,7 @@ namespace ALG.MetaBalls3D
             p.z = z;
             return p;
         }
-        public float ComputeValue(float3[] samplePts, float3 testP, int sampleLength)
+        public float ComputeValue(float3[] samplePts, float3 testP, int sampleLength, float fusion, float radius)
         {
             float result = 0.0f;
             float Dx, Dy, Dz;
@@ -179,7 +189,15 @@ namespace ALG.MetaBalls3D
                 Dy = testP.y - samplePts[j].y;
                 Dz = testP.z - samplePts[j].z;
 
-                result += 1.0f / (Dx * Dx + Dy * Dy + Dz * Dz);
+                // very slow field function
+                // result += 1.0f / (Dx * Dx + Dy * Dy + Dz * Dz);
+                // field function of soft object
+                float di = Dx * Dx + Dy * Dy + Dz * Dz;
+                if (di <= radius)
+                {
+                    float a = di / radius;
+                    result += (1.0f - (a * a * a * a * a * a * 4.0f / 9.0f) + (a * a * a * a * 17.0f / 9.0f) - (a * a * 22.0f / 9.0f));
+                }
             }
             return result;
         }
@@ -212,15 +230,19 @@ namespace ALG.MetaBalls3D
             float3 a6 = CreateFloat3(constVoxelSize.Value.x + p.x, constVoxelSize.Value.y + p.y, constVoxelSize.Value.z + p.z);
             float3 a7 = CreateFloat3(0 + p.x, constVoxelSize.Value.y + p.y, constVoxelSize.Value.z + p.z);
 
+            float distance = constVoxelSize.Value.x * constVoxelSize.Value.x +
+            constVoxelSize.Value.y * constVoxelSize.Value.y + constVoxelSize.Value.z * constVoxelSize.Value.z;
+            float radius = distance * constFusion.Value;
+
             //计算cube中的8个点对应的value
-            float d0 = ComputeValue(d_samplePts, a0, d_samplePts.Length);
-            float d1 = ComputeValue(d_samplePts, a1, d_samplePts.Length);
-            float d2 = ComputeValue(d_samplePts, a2, d_samplePts.Length);
-            float d3 = ComputeValue(d_samplePts, a3, d_samplePts.Length);
-            float d4 = ComputeValue(d_samplePts, a4, d_samplePts.Length);
-            float d5 = ComputeValue(d_samplePts, a5, d_samplePts.Length);
-            float d6 = ComputeValue(d_samplePts, a6, d_samplePts.Length);
-            float d7 = ComputeValue(d_samplePts, a7, d_samplePts.Length);
+            float d0 = ComputeValue(d_samplePts, a0, d_samplePts.Length, constFusion.Value, radius);
+            float d1 = ComputeValue(d_samplePts, a1, d_samplePts.Length, constFusion.Value, radius);
+            float d2 = ComputeValue(d_samplePts, a2, d_samplePts.Length, constFusion.Value, radius);
+            float d3 = ComputeValue(d_samplePts, a3, d_samplePts.Length, constFusion.Value, radius);
+            float d4 = ComputeValue(d_samplePts, a4, d_samplePts.Length, constFusion.Value, radius);
+            float d5 = ComputeValue(d_samplePts, a5, d_samplePts.Length, constFusion.Value, radius);
+            float d6 = ComputeValue(d_samplePts, a6, d_samplePts.Length, constFusion.Value, radius);
+            float d7 = ComputeValue(d_samplePts, a7, d_samplePts.Length, constFusion.Value, radius);
 
             //判定它们的状态
             int cubeindex;
@@ -252,6 +274,7 @@ namespace ALG.MetaBalls3D
             //Copy const values
             float3 baseP = new float3((float)basePoint.X, (float)basePoint.Y, (float)basePoint.Z);
             gpu.Copy(isoValue, constIsovalue);
+            gpu.Copy(fusion, constFusion);
             gpu.Copy(baseP, constBasePoint);
             gpu.Copy(voxelSize, constVoxelSize);
             gpu.Copy(gridSize, constGridSize);
@@ -323,7 +346,7 @@ namespace ALG.MetaBalls3D
             Gpu.Free(d_voxelVertsScan);
         }
         // extract isosurface points using GPU
-        public List<Point3d> runExtractIsoSurfaceGPU()
+        public List<Point3f> runExtractIsoSurfaceGPU()
         {
             var gpu = Gpu.Default;
 
@@ -371,15 +394,19 @@ namespace ALG.MetaBalls3D
                 float3 a6 = CreateFloat3(constVoxelSize.Value.x + p.x, constVoxelSize.Value.y + p.y, constVoxelSize.Value.z + p.z);
                 float3 a7 = CreateFloat3(0 + p.x, constVoxelSize.Value.y + p.y, constVoxelSize.Value.z + p.z);
 
+                float distance = constVoxelSize.Value.x * constVoxelSize.Value.x +
+                constVoxelSize.Value.y * constVoxelSize.Value.y + constVoxelSize.Value.z * constVoxelSize.Value.z;
+                float radius = distance * constFusion.Value;
+
                 //Compute cubeValues of 8 vertices
-                d_cubeValues[i * 8] = ComputeValue(d_samplePts, a0, d_samplePts.Length);
-                d_cubeValues[i * 8 + 1] = ComputeValue(d_samplePts, a1, d_samplePts.Length);
-                d_cubeValues[i * 8 + 2] = ComputeValue(d_samplePts, a2, d_samplePts.Length);
-                d_cubeValues[i * 8 + 3] = ComputeValue(d_samplePts, a3, d_samplePts.Length);
-                d_cubeValues[i * 8 + 4] = ComputeValue(d_samplePts, a4, d_samplePts.Length);
-                d_cubeValues[i * 8 + 5] = ComputeValue(d_samplePts, a5, d_samplePts.Length);
-                d_cubeValues[i * 8 + 6] = ComputeValue(d_samplePts, a6, d_samplePts.Length);
-                d_cubeValues[i * 8 + 7] = ComputeValue(d_samplePts, a7, d_samplePts.Length);
+                d_cubeValues[i * 8] = ComputeValue(d_samplePts, a0, d_samplePts.Length, constFusion.Value, radius);
+                d_cubeValues[i * 8 + 1] = ComputeValue(d_samplePts, a1, d_samplePts.Length, constFusion.Value, radius);
+                d_cubeValues[i * 8 + 2] = ComputeValue(d_samplePts, a2, d_samplePts.Length, constFusion.Value, radius);
+                d_cubeValues[i * 8 + 3] = ComputeValue(d_samplePts, a3, d_samplePts.Length, constFusion.Value, radius);
+                d_cubeValues[i * 8 + 4] = ComputeValue(d_samplePts, a4, d_samplePts.Length, constFusion.Value, radius);
+                d_cubeValues[i * 8 + 5] = ComputeValue(d_samplePts, a5, d_samplePts.Length, constFusion.Value, radius);
+                d_cubeValues[i * 8 + 6] = ComputeValue(d_samplePts, a6, d_samplePts.Length, constFusion.Value, radius);
+                d_cubeValues[i * 8 + 7] = ComputeValue(d_samplePts, a7, d_samplePts.Length, constFusion.Value, radius);
 
                 //Check each vertex state
                 int flag = Compact(d_cubeValues[i * 8], constIsovalue.Value);
@@ -435,7 +462,7 @@ namespace ALG.MetaBalls3D
             Gpu.Free(d_verts_scanIdx);
             Gpu.Free(d_index_voxelActive);
 
-            return ConvertFloat3ToPoint3d(resultVerts);
+            return ConvertFloat3ToPoint3f(resultVerts);
         }
 
         #region pointer based MCGPU

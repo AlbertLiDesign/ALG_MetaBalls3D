@@ -125,7 +125,7 @@ namespace ALG.MetaBalls3D
             }
             return pts;
         }
-        public static Mesh ExtractMesh(List<Point3d> pts)
+        public static Mesh ExtractMesh(List<Point3f> pts)
         {
             Mesh mesh = new Mesh();
             int FCount = pts.Count / 3;

@@ -104,7 +104,7 @@ namespace ALG.MetaBalls3D
             
             isoSurface.runClassifyVoxel();
             isoSurface.runExtractActiveVoxels();
-            List<Point3d> resultPts  = isoSurface.runExtractIsoSurfaceGPU();
+            List<Point3f> resultPts  = isoSurface.runExtractIsoSurfaceGPU();
 
             this.Message = isoSurface.numVoxels.ToString();
             sw.Stop();
@@ -126,7 +126,7 @@ namespace ALG.MetaBalls3D
             DA.SetDataList("Time", time);
 
         }
-        public static Mesh ExtractMesh(List<Point3d> pts)
+        public static Mesh ExtractMesh(List<Point3f> pts)
         {
             Mesh mesh = new Mesh();
             int FCount = pts.Count / 3;

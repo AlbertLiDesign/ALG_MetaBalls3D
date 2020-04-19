@@ -45,7 +45,7 @@ namespace ALG.MetaBalls3D
             float s, float iso, float fusion, cfloat3[] samplePoints, int sampleCount, ref uint resultLength);
         [DllImport("ALG_MetaBallsDLL.dll", EntryPoint = "GetResult")]
         public static extern void GetResult(IntPtr result);
-        public bool GenMetaBalls(ref List<Point3d> vertices, ref int num_activeVoxels)
+        public bool GenMetaBalls(ref List<Point3f> vertices, ref int num_activeVoxels)
         {
             int sampleCount = samplePoints.Count();
             cfloat3 bP = ConvertPtToFloat3(basePoint);
@@ -69,7 +69,7 @@ namespace ALG.MetaBalls3D
                 IntPtr result = Marshal.AllocHGlobal(size);
 
                 GetResult(result);
-                Point3d[] pts = new Point3d[(int)resultLength];
+                Point3f[] pts = new Point3f[(int)resultLength];
 
                 Parallel.For(0, (int)resultLength, i =>
                 {
@@ -91,9 +91,9 @@ namespace ALG.MetaBalls3D
             a.z = (float)p.Z;
             return a;
         }
-        public Point3d ConvertFloat3ToPt(cfloat3 p)
+        public Point3f ConvertFloat3ToPt(cfloat3 p)
         {
-            Point3d a = new Point3d();
+            Point3f a = new Point3f();
             a.X = p.x;
             a.Y = p.y;
             a.Z = p.z;
